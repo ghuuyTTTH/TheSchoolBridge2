@@ -1,17 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Session, Role } from './types';
-import * as authService from './services/authService';
-import { auth, db } from './services/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { User, Role } from './types';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signUp: (name: string, email: string, password: string, role: Role, extraField: string) => Promise<{ success: boolean; error?: string }>;
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signOut: () => Promise<void>;
+  login: (name: string, role: Role) => void;
+  signOut: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,43 +16,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true);
-      if (firebaseUser) {
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          setUser(userDoc.data() as User);
-        } else {
-          setUser(null);
-        }
-      } else {
-        setUser(null);
+    // Check localStorage for a saved user session
+    const savedUser = localStorage.getItem('schoolbridge_user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        localStorage.removeItem('schoolbridge_user');
       }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    }
+    setLoading(false);
   }, []);
 
-  const signUp = async (name: string, email: string, password: string, role: Role, extraField: string) => {
-    const result = await authService.signUp(name, email, password, role, extraField);
-    if (result.success && result.user) {
-      setUser(result.user);
-    }
-    return { success: result.success, error: result.error };
+  const login = (name: string, role: Role) => {
+    const newUser: User = {
+      id: Math.random().toString(36).substring(2, 9),
+      name,
+      email: `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+      passwordHash: '',
+      role,
+      studentId: role === 'student' ? 'STU' + Math.floor(Math.random() * 1000) : null,
+      schoolCode: role === 'teacher' ? 'SCH' + Math.floor(Math.random() * 1000) : null,
+      childStudentId: role === 'parent' ? 'STU' + Math.floor(Math.random() * 1000) : null,
+      createdAt: Date.now(),
+      classes: [],
+    };
+    
+    setUser(newUser);
+    localStorage.setItem('schoolbridge_user', JSON.stringify(newUser));
   };
 
-  const signIn = async (email: string, password: string) => {
-    const result = await authService.signIn(email, password);
-    if (result.success && result.user) {
-      setUser(result.user);
-    }
-    return { success: result.success, error: result.error };
-  };
-
-  const signOut = async () => {
-    await authService.signOut();
+  const signOut = () => {
     setUser(null);
+    localStorage.removeItem('schoolbridge_user');
   };
 
   if (loading) {
@@ -69,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, login, signOut }}>
       {children}
     </AuthContext.Provider>
   );
