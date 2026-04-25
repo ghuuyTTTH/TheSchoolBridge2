@@ -151,6 +151,16 @@ export const AuthFlow: React.FC = () => {
               </button>
             ))}
           </div>
+
+          <div className="mt-8 pt-6 border-t border-slate-100">
+            <button 
+              onClick={() => navigate('/supabase-test')}
+              className="w-full py-3 px-4 bg-slate-50 text-slate-500 rounded-2xl text-xs font-bold hover:bg-slate-100 transition-colors flex items-center justify-center gap-2"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              Test Supabase Connection
+            </button>
+          </div>
         </motion.div>
       </div>
     );

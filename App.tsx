@@ -8,6 +8,7 @@ import { AuthFlow } from './screens/AuthFlow';
 import { StudentDashboard } from './screens/StudentScreens';
 import { TeacherDashboard } from './screens/TeacherScreens';
 import { ParentDashboard } from './screens/ParentScreens';
+import { SupabaseDemo } from './components/SupabaseDemo';
 
 // Root component that handles initial redirects
 const AppRoot: React.FC = () => {
@@ -36,6 +37,7 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<AppRoot />} />
             <Route path="/auth" element={<AuthFlow />} />
+            <Route path="/supabase-test" element={<SupabaseDemo />} />
             
             {/* Student Routes */}
             <Route path="/student/dashboard" element={
